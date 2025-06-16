@@ -109,10 +109,10 @@ def Ler_dados_da_tabela(tabela, colunas="*", condicao=None, database=standart_pa
         cursor.execute(query)
         resultados = cursor.fetchall()
 
-        print("--Resultados--")
-        for linha in resultados:
-            print(linha)
-        print("--------------")
+        # print("--Resultados--")
+        # for linha in resultados:
+        #     print(linha)
+        # print("--------------")
 
         return resultados
 
@@ -148,8 +148,22 @@ def cadastrar_livro(table = ''):
 
     print(classe_criada.print_dados())
 
-    classe_criada.Salvar_para_sql()
-    # utils.clean_terminal()
+    if cli.cli_bool():
+        classe_criada.Salvar_para_sql()
+    else:
+        print("> Operação cancelada")
+        pass
+
+
+def cadastrar_Publicadora():
+    cli.publicadora_cli()
+    pass
+    
+
+
+
+
+# utils.clean_terminal()
     # Adicionar_dado_a_table_ESPECIFICO(
     #     "Livro",
     #     ["nome", "lancamento", "paginas"],
@@ -162,9 +176,6 @@ def cadastrar_livro(table = ''):
     #     {"nome": "Novo Nome", "lancamento": "2023-01-01"},
     #     "id_livro = 1"
     # )
-
-
-
 
 
 

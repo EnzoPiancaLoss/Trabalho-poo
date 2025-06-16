@@ -51,6 +51,9 @@ def Cadastrar_itens():
                 #a = input()
                 banco_de_dado.cadastrar_livro()
                 pass
+            elif respota == "2":
+                banco_de_dado.cadastrar_Publicadora()
+                pass
             pass
         pass
     pass
