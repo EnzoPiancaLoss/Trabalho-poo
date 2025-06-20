@@ -154,78 +154,152 @@ def Existe_dado_na_tabela(tabela, condicao, database=standart_path):
         conn.close()
 
 
-def cadastrar_livro(table = ''):
-    
+def cadastrar_livro(edicao=False, id_pronto=0):
     classe_criada = cli.cadastrar_livros_cli()
 
     print(classe_criada.print_dados())
 
     if cli.cli_bool():
-        classe_criada.Salvar_para_sql()
+        if edicao:
+            # Atualiza o livro existente
+            classe_criada.Salvar_para_sql(edicao=True, id_pronto=id_pronto)
+        else:
+            # Cadastro normal
+            classe_criada.Salvar_para_sql()
     else:
         print("> Operação cancelada")
         pass
 
 
-def cadastrar_Publicadora():
+def cadastrar_Publicadora(edicao=False, id_pronto=0):
     resultado = cli.publicadora_cli()
-    publisher_id = Adicionar_dado_a_table_ESPECIFICO(
-        "Editora",
-        ["nome_editora"],
-        [resultado["nome_editora"]]
-    )
-    endereco_id = Adicionar_dado_a_table_ESPECIFICO(
-        "Endereco",
-        ["CEP", "Cidade", "Bairro", "Rua", "Estado", "Numero"],
-        [
-            resultado["endereco"]["cep"],
-            resultado["endereco"]["cidade"],
-            resultado["endereco"]["bairro"],
-            resultado["endereco"]["rua"],
-            resultado["endereco"]["estado"],
-            resultado["endereco"]["numero"]
-        ]
-    )
-    Adicionar_dado_a_table_ESPECIFICO(
-        "Editora_endereco",
-        ["id_editora", "id_endereco"],
-        [publisher_id, endereco_id]
-    )
-
-    print(f"> ID da publicadora criada: {publisher_id}")
-    print(f"> ID do endereco criada: {endereco_id}")
-    print("> Data base criada")
+    if edicao and id_pronto:
+        # Atualiza a publicadora existente
+        Alterar_table(
+            "Editora",
+            {"nome_editora": resultado["nome_editora"]},
+            f"id_editora = {id_pronto}"
+        )
+        # Atualiza endereço (você pode querer buscar o id_endereco relacionado e atualizar)
+        # Exemplo: Atualiza todos os endereços ligados a essa editora
+        enderecos = Ler_dados_da_tabela("Editora_endereco", "id_endereco", f"id_editora = {id_pronto}")
+        if enderecos:
+            for endereco_id in enderecos:
+                Alterar_table(
+                    "Endereco",
+                    resultado["endereco"],
+                    f"id_endereco = {endereco_id[0]}"
+                )
+        print("> Publicadora atualizada com sucesso!")
+    else:
+        publisher_id = Adicionar_dado_a_table_ESPECIFICO(
+            "Editora",
+            ["nome_editora"],
+            [resultado["nome_editora"]]
+        )
+        endereco_id = Adicionar_dado_a_table_ESPECIFICO(
+            "Endereco",
+            ["CEP", "Cidade", "Bairro", "Rua", "Estado", "Numero"],
+            [
+                resultado["endereco"]["cep"],
+                resultado["endereco"]["cidade"],
+                resultado["endereco"]["bairro"],
+                resultado["endereco"]["rua"],
+                resultado["endereco"]["estado"],
+                resultado["endereco"]["numero"]
+            ]
+        )
+        Adicionar_dado_a_table_ESPECIFICO(
+            "Editora_endereco",
+            ["id_editora", "id_endereco"],
+            [publisher_id, endereco_id]
+        )
+        print(f"> ID da publicadora criada: {publisher_id}")
+        print(f"> ID do endereco criada: {endereco_id}")
+        print("> Data base criada")
     
     pass
     
 
-def cadastrar_cliente():
+def cadastrar_autor(edicao=False, id_pronto=0):
+    resultado = cli.autor_cli()
+    if edicao and id_pronto:
+        Alterar_table(
+            "Autor",
+            {"nome_autor": resultado["nome_autor"], "genero_autor": resultado["sexo"], "nascimento": resultado["nascimento"]},
+            f"id_autor = {id_pronto}"
+        )
+        print("> Autor atualizado com sucesso!")
+    else:
+        Adicionar_dado_a_table_ESPECIFICO(
+            "Autor",
+            ["nome_autor", "genero_autor", "nascimento"],
+            [resultado["nome_autor"], resultado["sexo"], resultado["nascimento"]]
+        )
+        print("> Cadastro terminado")
+    pass
+
+def cadastrar_cliente(edicao=False, id_pronto=0):
     resultado = cli.usuario_cli()
-    cliente_id = Adicionar_dado_a_table_ESPECIFICO(
-        "Cliente",
-        ["nome", "sexo_cliente","aniversario","email", "telefone", "CPF"],
-        [resultado["nome_usuario"],resultado["sexo"], resultado["nascimento"], resultado["email"], resultado["telefone"],resultado["cpf"]]
-    )
-    endereco_id = Adicionar_dado_a_table_ESPECIFICO(
-        "Endereco",
-        ["CEP", "Cidade", "Bairro", "Rua", "Estado", "Numero"],
-        [
-            resultado["endereco"]["cep"],
-            resultado["endereco"]["cidade"],
-            resultado["endereco"]["bairro"],
-            resultado["endereco"]["rua"],
-            resultado["endereco"]["estado"],
-            resultado["endereco"]["numero"]
-        ]
-    )
-    Adicionar_dado_a_table_ESPECIFICO(
-        "Endereco_cliente",
-        ["id_cliente", "id_endereco"],
-        [cliente_id, endereco_id]
-    )
-    print("> Adicao concluida")
+    if edicao and id_pronto:
+        Alterar_table(
+            "Cliente",
+            {
+                "nome": resultado["nome_usuario"],
+                "sexo_cliente": resultado["sexo"],
+                "aniversario": resultado["nascimento"],
+                "email": resultado["email"],
+                "telefone": resultado["telefone"],
+                "CPF": resultado["cpf"]
+            },
+            f"id_cliente = {id_pronto}"
+        )
+        # Atualiza endereço (busque o id_endereco relacionado e atualize)
+        enderecos = Ler_dados_da_tabela("Endereco_cliente", "id_endereco", f"id_cliente = {id_pronto}")
+        if enderecos:
+            for endereco_id in enderecos:
+                Alterar_table(
+                    "Endereco",
+                    resultado["endereco"],
+                    f"id_endereco = {endereco_id[0]}"
+                )
+        print("> Cliente atualizado com sucesso!")
+    else:
+        cliente_id = Adicionar_dado_a_table_ESPECIFICO(
+            "Cliente",
+            ["nome", "sexo_cliente", "aniversario", "email", "telefone", "CPF"],
+            [resultado["nome_usuario"], resultado["sexo"], resultado["nascimento"], resultado["email"], resultado["telefone"], resultado["cpf"]]
+        )
+        endereco_id = Adicionar_dado_a_table_ESPECIFICO(
+            "Endereco",
+            ["CEP", "Cidade", "Bairro", "Rua", "Estado", "Numero"],
+            [
+                resultado["endereco"]["cep"],
+                resultado["endereco"]["cidade"],
+                resultado["endereco"]["bairro"],
+                resultado["endereco"]["rua"],
+                resultado["endereco"]["estado"],
+                resultado["endereco"]["numero"]
+            ]
+        )
+        Adicionar_dado_a_table_ESPECIFICO(
+            "Endereco_cliente",
+            ["id_cliente", "id_endereco"],
+            [cliente_id, endereco_id]
+        )
+        print("> Adicao concluida")
     pass
 
+
+def Limpar_relacao(tabela, condicao, database=standart_path):
+    import sqlite3
+    conn = sqlite3.connect(database)
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"DELETE FROM {tabela} WHERE {condicao}")
+        conn.commit()
+    finally:
+        conn.close()
 
 # utils.clean_terminal()
     # Adicionar_dado_a_table_ESPECIFICO(
@@ -241,24 +315,6 @@ def cadastrar_cliente():
     #     "id_livro = 1"
     # )
 
-
-
-def cadastrar_autor():
-    resultado = cli.autor_cli()
-    Adicionar_dado_a_table_ESPECIFICO(
-        "Autor",
-        ["nome_autor", "genero_autor","nascimento"],
-        [resultado["nome_autor"], resultado["sexo"],resultado["nascimento"]]
-
-    )
-    print("> Cadastro terminado")
-    pass
-
-# Adicionar_dado_a_table_ESPECIFICO(
-#     "Livros", 
-#     ["nome", "lancamento"], 
-#     ["Livro A", "2020-01-01"]
-# )
 
 
 # table()

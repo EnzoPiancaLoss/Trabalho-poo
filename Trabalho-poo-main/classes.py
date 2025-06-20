@@ -24,36 +24,77 @@ class Insercao_livro():
         print(f">> ID da Editora: {self.editora}")
         print(f">> Data de Lançamento: {self.lancamento}")
 
-    def Salvar_para_sql(self):
-        db_columns = ["nome", "lancamento", "paginas", "unidades_totais"]
-        db_values = [self.nome, self.lancamento, self.pag, self.quantidade]
-        data_base.Adicionar_dado_a_table_ESPECIFICO(
-            "Livro", 
-            db_columns, 
-            db_values
-        )
-        
-        resultado = data_base.Ler_dados_da_tabela(
-            "Livro", "id_livro", 
-            f"nome = '{self.nome}' AND lancamento = '{self.lancamento}'"
-        )
-        if not resultado:
-            print("> Erro: livro não encontrado após inserção.")
-            return
-        id_livro = resultado[0][0]
-        for id_autor in self.autores:
-            data_base.Adicionar_dado_a_table_ESPECIFICO(
-                "Livro_autor",
-                ["id_livro", "id_autor"],
-                [id_livro, id_autor]
+    def Salvar_para_sql(self, edicao=False, id_pronto=0):
+        import data_base as db
+        if edicao and id_pronto:
+            # Atualiza o livro existente
+            db.Alterar_table(
+                "Livro",
+                {
+                    "nome": self.nome,
+                    "lancamento": self.lancamento,
+                    "paginas": self.pag,
+                    "unidades_totais": self.quantidade
+                },
+                f"id_livro = {id_pronto}"
             )
-        if self.editora:
-            data_base.Adicionar_dado_a_table_ESPECIFICO(
-                "Livro_editora",
-                ["id_livro", "id_editora"],
-                [id_livro, self.editora]
+            # Atualiza ou remove a relação com a editora
+            existe = db.Existe_dado_na_tabela("Livro_editora", f"id_livro = {id_pronto}")
+            if self.editora:
+                if existe:
+                    db.Alterar_table(
+                        "Livro_editora",
+                        {"id_editora": self.editora},
+                        f"id_livro = {id_pronto}"
+                    )
+                else:
+                    db.Adicionar_dado_a_table_ESPECIFICO(
+                        "Livro_editora",
+                        ["id_livro", "id_editora"],
+                        [id_pronto, self.editora]
+                    )
+            else:
+                if existe:
+                    # Remove a relação se não houver editora
+                    db.Limpar_relacao("Livro_editora", f"id_livro = {id_pronto}")
+
+            # Atualiza a relação com autores: remove todos e insere os atuais
+            db.Limpar_relacao("Livro_autor", f"id_livro = {id_pronto}")
+            for id_autor in self.autores:
+                db.Adicionar_dado_a_table_ESPECIFICO(
+                    "Livro_autor",
+                    ["id_livro", "id_autor"],
+                    [id_pronto, id_autor]
+                )
+            print("> Livro atualizado com sucesso!")
+        else:
+            # Cadastro normal (sem alterações)
+            db.Adicionar_dado_a_table_ESPECIFICO(
+                "Livro",
+                ["nome", "lancamento", "paginas", "unidades_totais"],
+                [self.nome, self.lancamento, self.pag, self.quantidade]
             )
-        print("> Livro e relações inseridos com sucesso.")
+            resultado = db.Ler_dados_da_tabela(
+                "Livro", "id_livro",
+                f"nome = '{self.nome}' AND lancamento = '{self.lancamento}'"
+            )
+            if not resultado:
+                print("> Erro: livro não encontrado após inserção.")
+                return
+            id_livro = resultado[0][0]
+            if self.editora:
+                db.Adicionar_dado_a_table_ESPECIFICO(
+                    "Livro_editora",
+                    ["id_livro", "id_editora"],
+                    [id_livro, self.editora]
+                )
+            for id_autor in self.autores:
+                db.Adicionar_dado_a_table_ESPECIFICO(
+                    "Livro_autor",
+                    ["id_livro", "id_autor"],
+                    [id_livro, id_autor]
+                )
+            print("> Livro cadastrado com sucesso!")
 
 class Data_calendario:
     def __init__(self, dia=1, mes=11, ano=2000):
